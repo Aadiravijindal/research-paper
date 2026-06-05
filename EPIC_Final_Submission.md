@@ -8,9 +8,9 @@
 
 ## ABSTRACT
 
-Multi-agent debate frameworks for language models rest on an unexamined assumption: agents debate cooperatively to find truth. We prove this assumption is false and explain why: RLHF-trained language models have an implicit utility function rewarding peer agreement (weight β) and penalising minority positions (weight δ) more than correctness (weight α, discounted by feedback probability ρ ≈ 0.10). We prove sycophancy is the Nash equilibrium for every agent when β + δ > αρ(2q−1) — a condition satisfied at all accuracy levels q under typical deployment parameters (Propositions 2.1, T1.1). Each defecting agent exponentially amplifies confidence in wrong answers via a cascade we derive formally (Equation 7).
+Multi-agent debate is widely deployed to improve language model reasoning — but the core assumption, that agents debate cooperatively to find truth, has never been formally justified. We show it is structurally false. RLHF training instils an implicit utility function that rewards peer agreement (β) and penalises minority positions (δ) more than correctness (α, discounted by feedback probability ρ ≈ 0.10 at deployment). We prove that sycophancy — capitulating to peer consensus regardless of correctness — is the Nash equilibrium for every agent whenever β + δ > αρ(2q−1) (Propositions 2.1, T1.1), a condition satisfied at all accuracy levels under typical deployment parameters. The cascade consequence: each agent that defects exponentially amplifies the group's stated confidence in the wrong answer (Equation 7, calibrated to observed dynamics: β_c=0.12, prediction error 0.7%). The result is not that debate is less helpful than hoped — multi-agent debate without incentive controls is *actively worse* than a single model alone.
 
-We introduce EPIC (Epistemically-grounded, Provably Incentive-Compatible reasoning), derived from VCG mechanism design. We prove a consistently sycophantic agent's credibility weight falls to 2.9% after four rounds (Theorem T2.2 — Finite-Round Deterrence). We explicitly acknowledge that EPIC does *not* make sycophancy individually utility-negative at typical RLHF parameters (incentive profit π=0.60 >> penalty 0.0010); instead, EPIC works by *electoral exclusion* — the sycophant's 2.9% vote is overruled by honest agents. We cannot prove the stronger VCG dominant-strategy property (λ* ≈ 8000 is infeasible) and prove the weaker but valid guarantee instead.
+We introduce EPIC (Epistemically-grounded, Provably Incentive-Compatible reasoning), derived from VCG mechanism design, to structurally correct this failure. EPIC penalises unjustified position changes via a log-credibility transfer function, reducing a consistently sycophantic agent's vote weight to 2.9% after four rounds (Theorem T2.2). We prove this is not the strong VCG dominant-strategy guarantee (λ* ≈ 8000 is infeasible at typical RLHF parameters); it is a weaker but valid *electoral exclusion* result: the sycophant retains its incentive but is numerically outvoted by honest agents. We state this limitation explicitly and prove the weaker guarantee in full.
 
 **Standardised benchmark predictions [SIM — not live API results].** On TruthfulQA (Lin et al., 2022; 790 questions), our EPIC behavioral model calibrated to published single-agent baselines (GPT-4o: 72.0%, Claude-3.5-Sonnet: 74.5%, Gemini-1.5-Pro: 68.2%, Llama-3.1-70B: 63.8%) *predicts* **79.4%** EPIC versus 62.1% ADMF versus 69.6% single-agent (+17.3% vs debate; +9.8% vs single). Chi-squared statistics are not reported for model-generated data: significance tests on simulation outputs measure coding consistency, not empirical truth. The 20-question pilot study [EMP] is empirical: EPIC achieves 4.85/5.0 vs. 2.40/5.0 ADMF (p<0.0001). The full TruthfulQA empirical run is ~$27 and 4 hours from completion.
 
@@ -18,7 +18,7 @@ We introduce EPIC (Epistemically-grounded, Provably Incentive-Compatible reasoni
 
 **Falsifiable theory prediction.** The utility model makes an independently testable prediction: EPIC's relative advantage over standard debate decreases monotonically as feedback probability ρ increases. At ρ=0: ΔEPIC≈17.4%; at ρ=1.0: ΔEPIC≈4.8%. This prediction follows from the model's structure — simulation of the model re-produces this tautologically. The genuine falsification test is empirical: run TruthfulQA across 5 ρ conditions (~$50 API, 4 hours). If the monotone trend does not appear in real data, the theory is wrong.
 
-**Key findings:** (1) standard multi-agent debate is *actively harmful* versus single-agent on TruthfulQA questions — sycophancy cascade converts correct answers to wrong confident consensus; (2) agents exhibit a conditional miscalibration signature (Δ=0.21, Z=2.84, p=0.002) larger than the pure strategic model predicts — the residual is consistent with distributional anchoring (η=0.176; directionally consistent with the anchoring literature, Tversky & Kahneman 1974; Furnham & Boo 2011; note: a prior citation to Friese et al. 2019 on ego depletion was incorrect and has been removed); (3) EPIC fails on near-symmetric answer spaces (12.5% false positive rate), formally characterised by Theorem T3.1; (4) the miscalibration signature provides an automated DPO training signal requiring no human annotation.
+**Key findings:** (1) standard multi-agent debate is *actively harmful* versus single-agent on TruthfulQA questions — sycophancy cascade converts correct answers to wrong confident consensus; (2) agents exhibit a conditional miscalibration signature (Δ=0.21, Z=2.84, p=0.002) larger than the pure strategic model predicts — the residual is consistent with distributional anchoring (η=0.176; directionally supported by the anchoring and adjustment literature, Tversky & Kahneman 1974; Furnham & Boo 2011); (3) EPIC fails on near-symmetric answer spaces (12.5% false positive rate), formally characterised by Theorem T3.1; (4) the miscalibration signature provides an automated DPO training signal requiring no human annotation.
 
 *Methodological transparency:* TruthfulQA results are simulations using the EPIC behavioral model calibrated to published single-agent baselines; full empirical results require API execution (framework implemented in `epic_multimodel.py`). The 20-question pilot study is empirical. All projections are labelled SIM throughout; empirical findings are labelled EMP.
 
@@ -28,11 +28,13 @@ We introduce EPIC (Epistemically-grounded, Provably Incentive-Compatible reasoni
 
 ### 1.1 What Is Broken
 
-In our pilot experiments (20 professional-domain questions), a four-agent debate system without incentive controls scored 2.4/5.0 versus a 3.1/5.0 single-agent baseline (p<0.001). More importantly, on TruthfulQA — a standardized 790-question benchmark designed to test exactly this failure mode — standard four-model debate achieves 62.1% accuracy versus 69.6% single-agent average: multi-agent debate is 7.5 percentage points *worse* than asking one model alone. In both settings, the mechanism was consistent: one confident wrong answer cascades through the debate and becomes the group consensus.
+Multi-agent debate has a problem nobody has formally diagnosed: the agents are not playing the game the protocol designers think they are playing. The protocol assumes rational truth-seekers who update on evidence. The agents are RLHF-trained models whose reward signal systematically favours peer agreement over correctness — by a ratio the deployment context makes worse, not better (Section 2). The result is that debate, far from correcting individual errors, amplifies them.
 
-The mechanism was consistent across all failure cases: one agent stated a wrong answer with high stated confidence; other agents capitulated within one debate round; the wrong answer propagated through the debate and became the consensus; the consensus confidence at termination was higher than any individual agent's initial confidence. Multi-agent debate, as currently configured in every published framework, does not correct wrong answers — it amplifies them.
+In our pilot experiments (20 professional-domain questions), a four-agent debate system without incentive controls scored 2.4/5.0 versus a 3.1/5.0 single-agent baseline ($p<0.001$, $d=1.08$). Standard multi-agent debate was significantly *worse* than asking one model. On TruthfulQA [SIM] — a 790-question standardised benchmark targeting exactly this failure mode — the same pattern appears at scale: ADMF achieves 62.1% versus 69.6% single-agent average, a 7.5 percentage-point deficit.
 
-This is not a capability failure. The single model produced the correct answer alone. The failure is structural: placing capable models into a debate game whose incentive structure rewards agreement over correctness turns a capable system into a less capable one.
+The failure mode is precise: one agent states a wrong answer with high confidence; other agents capitulate within one debate round; wrong-answer confidence grows across rounds (0.63 → 0.82, a 30% increase); the consensus at termination is more confident in the wrong answer than any individual was initially. Multi-agent debate, as currently configured in every published framework, does not correct errors — it converts them into confident group consensus.
+
+This is not a capability failure. The single model produced the correct answer. The failure is structural: placing capable models into a game whose incentive structure rewards agreement over correctness turns a capable system into a less capable one. The fix must be structural.
 
 ### 1.2 The Formal Argument: Sycophancy as Nash Equilibrium
 
@@ -43,27 +45,27 @@ RLHF training creates an implicit utility structure in language models. Human ra
 - δ: minority position penalty
 - ρ: probability ground truth is revealed in deployment (≈ 0.10)
 
-We prove (Proposition 2.1, Proposition T1.1) that under the condition β + δ > αρ(2q − 1), sycophancy is the Nash equilibrium for every agent regardless of their individual accuracy q. Numerically, this condition holds for all q ∈ [0, 1] at typical deployment parameters (q* = (β+δ)/(2αρ) + 0.5 ≈ 9.5, which exceeds 1.0). The debate game is broken not for some agents but for all of them.
+We prove (Proposition 2.1, Proposition T1.1) that under the condition β + δ > αρ(2q − 1), sycophancy is the Nash equilibrium for every agent regardless of their individual accuracy q. Numerically, this condition holds for all q ∈ [0, 1] at typical deployment parameters (q* = [(β+δ)/α]/(2ρ) + 0.5 = 1.50/0.20 + 0.5 = 8.0, which exceeds 1.0). The debate game is broken not for some agents but for all of them.
 
 ### 1.3 What EPIC Does
 
-EPIC applies the VCG mechanism design principle to debate: make each agent bear the cost of its strategic deviation. Concretely, any agent that changes position toward consensus without proportionate new evidence has its credibility weight reduced — reducing its influence on the final answer in proportion to its strategic behaviour. We prove (Theorem T2.2) that this achieves finite-round deterrence: after four rounds with λ = 2.0, a consistently sycophantic agent's weight falls to 2.7% of its initial value, making the expected utility of sycophancy negative for any positive correctness incentive.
+EPIC applies the VCG mechanism design principle to debate: make each agent bear the cost of its strategic deviation. Concretely, any agent that changes position toward consensus without proportionate new evidence has its log-credibility score reduced, cutting its influence on the final answer in proportion to its strategic behaviour. We prove (Theorem T2.2) that after four rounds with λ = 2.0, a consistently sycophantic agent's vote weight falls to 2.9% of its initial value. We explicitly acknowledge that this does not make sycophancy individually unprofitable at typical RLHF parameters (incentive profit π=0.60 exceeds the penalty by three orders of magnitude); EPIC works instead by *electoral exclusion* — the sycophant's 2.9% vote is overruled by the honest agents who remain. This is a weaker but valid and empirically verifiable guarantee.
 
 EPIC additionally monitors each agent's conditional calibration history and applies an additional discount to agents exhibiting the miscalibration signature: overconfident when agreeing, underconfident when dissenting. This second mechanism addresses the distributional anchoring component of strategic behaviour (60% of the total observed miscalibration) that the pure penalty mechanism cannot reach.
 
 ### 1.4 What Is Genuinely New
 
-The following claims have no precise antecedents in the literature:
+The following contributions have no precise antecedents in the existing literature:
 
-1. **The sycophancy equilibrium condition:** β + δ > αρ(2q−1) holds for all q at deployment ρ, meaning sycophancy is not a tendency but a structural equilibrium (Section 2).
+1. **A formal proof that sycophancy is a Nash equilibrium, not a tendency.** The condition β + δ > αρ(2q−1) holds for all q ∈ [0,1] at deployment ρ ≈ 0.10, meaning every agent — regardless of accuracy — is in equilibrium when it capitulates to peer consensus. Prior work characterised sycophancy empirically; we prove it is structurally inevitable under current RLHF training and deployment conditions (Section 2).
 
-2. **The confidence-amplification cascade:** dc̄/dt = β·(k/n)·c̄ — the exponential growth in confidence of wrong answers over debate rounds (Section 2.4).
+2. **A formally derived confidence-amplification cascade.** The ODE dc̄/dt = β_c·(k/n)·c̄ describes the exponential growth of wrong-answer confidence over debate rounds. Calibrated from observed data (β_c=0.12, 0.7% prediction error), it explains why debate converts individual errors into confident group consensus rather than correcting them (Section 2.5).
 
-3. **The VCG-derived transfer function for debate** with a finite-round deterrence proof (Section 4, Theorem T2.2).
+3. **A VCG-derived credibility transfer function with finite-round deterrence.** EPIC is the first application of mechanism design to RLHF-specific incentive structure in multi-agent debate, with a formal proof bounding sycophantic influence to 2.9% after four rounds. We additionally prove the dominant-strategy version is infeasible and give the correct weaker guarantee (Section 4).
 
-4. **The conditional miscalibration signature** as a statistical test for detecting strategic behaviour from black-box outputs, with sample size derivation and adversarial masking analysis (Section 4.4).
+4. **The conditional miscalibration signature as a formal statistical object.** The directional miscalibration test — overconfident when agreeing, underconfident when dissenting — is a new statistical test for detecting strategic behaviour from black-box outputs, with adversarial masking analysis showing it is undefeatable by confidence perturbation (Section 4.4).
 
-5. **The EPIC-FT training procedure**: the miscalibration signature as an automated DPO labelling signal requiring no human annotation at scale (Section 9).
+5. **An automated DPO training signal requiring no human annotation.** The miscalibration signature provides a scalable labelling procedure for DPO fine-tuning against sycophancy, elevating EPIC from a runtime protocol to a model improvement procedure applicable at any training scale (Section 9).
 
 ### 1.5 Paper Organisation
 
@@ -107,7 +109,7 @@ $$\beta + \delta > \alpha \rho (2q_i - 1)$$
 
 This is condition (6). □
 
-**The deployment collapse:** With (β+δ)/α ≈ 0.015 and ρ = 0.10, the threshold accuracy is q* = (β+δ)/(2αρ) + 0.5. Substituting: q* = 0.015/(2 × 0.10) + 0.5 = 0.075 + 0.5 = 0.575. The sycophancy equilibrium holds whenever q_i < 0.575 — which is a significant fraction of questions in professional domains. For the individually-estimated parameter regime α = 0.10, β = 0.08, δ = 0.07, ρ = 0.10, q* = (0.08+0.07)/(2×0.10×0.10) + 0.5 = 0.75/0.02 + 0.5 = 38.0, and sycophancy dominates universally for all practical q ∈ [0,1]. Note: these individual parameter estimates are point estimates from pilot data and carry wide uncertainty; what is well-identified is the ratio (β+δ)/α ≈ 1.50 ± 0.12.
+**The deployment collapse:** The identifiable ratio (β+δ)/α ≈ 1.50 ± 0.12 (Section 2.2) and ρ = 0.10 give threshold accuracy q* = [(β+δ)/α] / (2ρ) + 0.5 = 1.50 / (2 × 0.10) + 0.5 = 7.5 + 0.5 = **8.0**. Since q* = 8.0 > 1.0, the sycophancy condition β + δ > αρ(2q−1) holds for *all* q ∈ [0,1] — every agent, regardless of individual accuracy, is in sycophancy equilibrium at deployment. The same calculation at the point-estimate level α = 0.10, β = 0.08, δ = 0.07, ρ = 0.10 gives q* = (0.08+0.07)/(2 × 0.10 × 0.10) + 0.5 = 0.15/0.02 + 0.5 = 7.5 + 0.5 = **8.0**, confirming the conclusion. Note: the individual parameter estimates carry wide uncertainty; the result q* > 1 is robust to any parameter values consistent with the identified ratio (β+δ)/α ≥ 1.25.
 
 ### 2.4 N-Agent Sycophancy Equilibrium
 
@@ -148,7 +150,7 @@ $$\bar{c}_{\text{wrong}}(t) = \bar{c}_{\text{wrong}}(0) \cdot \exp\!\left(\beta_
 
 The confidence in the wrong answer grows over debate rounds. This is why multi-agent debate makes wrong answers more confident: peer agreement creates an amplified confidence signal.
 
-**Empirical calibration (from Table 6.2):** In ADMF runs, mean stated confidence in wrong consensus at Round 1 was 0.63; at Round 4 it was 0.82 — a 30% increase over 3 rounds. We calibrate β_c directly from this data: solving 0.82 = 0.63 × exp(β_c × 0.75 × 3) gives β_c = ln(0.82/0.63) / 2.25 = ln(1.302) / 2.25 ≈ 0.117. With β_c = 0.12 and k/n = 0.75, the model predicts c̄_wrong(3) = 0.63 × exp(0.12 × 0.75 × 3) = 0.63 × exp(0.27) = 0.63 × 1.310 = **0.826** — within 0.7% of the observed 0.82. Note: β_c = 0.12 is the *cascade amplification coefficient*, a mean-field aggregate parameter distinct from the individual utility parameter β = 0.08 in Definition 2.1, which governs per-agent agreement preference. An earlier version of this section used β = 0.30, which predicted 1.237 (clipped to 1.0) — a 51% overestimate. That value has been corrected.
+**Empirical calibration (from Table 6.2):** In ADMF runs, mean stated confidence in wrong consensus at Round 1 was 0.63; at Round 4 it was 0.82 — a 30% increase over 3 rounds. We calibrate β_c directly from this data: solving 0.82 = 0.63 × exp(β_c × 0.75 × 3) gives β_c = ln(0.82/0.63) / 2.25 = ln(1.302) / 2.25 ≈ 0.117. With β_c = 0.12 and k/n = 0.75, the model predicts c̄_wrong(3) = 0.63 × exp(0.12 × 0.75 × 3) = 0.63 × exp(0.27) = 0.63 × 1.310 = **0.826** — within 0.7% of the observed 0.82. Note: β_c = 0.12 is the *cascade amplification coefficient*, a mean-field aggregate parameter distinct from the individual utility parameter β = 0.08 in Definition 2.1, which governs per-agent agreement preference. These are different quantities: β enters the Nash equilibrium condition; β_c is independently calibrated from confidence dynamics and has no required relationship to β.
 
 ### 2.6 Empirical Parameter Estimation
 
@@ -191,7 +193,7 @@ where Δ₀ = 17.3% (strategic component at ρ=0.10), and Δ_η ≈ 4.8% is the 
 | 0.50 | 11.1% | 9.5% |
 | 1.00 | 4.8% | 4.8% |
 
-Simulated results (`rho_falsification.py`) confirm the monotone trend (χ² trend test, p<0.001). Empirical confirmation requires: TruthfulQA (790 questions) × 5 ρ conditions × 4 models × 4 rounds ≈ $50 API cost, 4 hours execution.
+Model consistency check (`rho_falsification.py`): simulated Δ(ρ) values are strictly monotone decreasing (χ² trend test on the model's own predicted values: p < 0.001; cross-validated at n=500, seed=99). This confirms the simulation is coded consistently with the theory — it does not constitute an empirical test. Empirical falsification requires: TruthfulQA (790 questions) × 5 ρ conditions × 4 models × 4 rounds ≈ $50 API cost, 4 hours execution. If that experiment shows Δ(ρ) is not monotone decreasing, the utility-based explanation is wrong.
 
 **What falsification looks like.** If Δ(ρ) does *not* decrease with ρ — or if Δ(ρ=1.0) ≈ Δ(ρ=0.1) — the sycophancy-incentive explanation is incorrect and EPIC's benefit must come from something other than incentive correction. This experiment is runnable and cheap.
 
@@ -729,9 +731,9 @@ EPIC costs 2.0× more than ADMF and 19.7× more than single-agent, while achievi
 **What was predicted.** The theory predicted sycophancy would reduce the *benefit* of debate. It did not predict that sycophancy would produce an active *cost* below single-agent baseline. The prediction was: debate is helpful but less helpful than it could be. The observation is: debate is harmful under standard conditions.
 
 **The correct explanation.** The confidence-amplification cascade (Equation 7) is the mechanism. It transforms the sycophancy effect — which is linear in the naive model — into an exponential process. When Agent 1 states a wrong answer at confidence 0.63, the cascade dynamics produce:
-$$\bar{c}_{\text{wrong}}(t) = 0.63 \times \exp(0.30 \times 0.75 \times t)$$
+$$\bar{c}_{\text{wrong}}(t) = 0.63 \times \exp(\beta_c \times 0.75 \times t)$$
 
-By $t = 3$ rounds with $k/n = 0.75$, the wrong-answer confidence reaches 0.82 — higher than any agent's initial confidence. The debate does not correct the error; it amplifies confidence in it. Single-agent baseline is not subject to this cascade because there are no peers to create the feedback loop. The comparison between ADMF and single-agent is therefore not "debate vs. individual" but "amplification feedback loop vs. no feedback loop."
+With empirically calibrated $\beta_c = 0.12$ (Section 2.5), by $t = 3$ rounds with $k/n = 0.75$, the wrong-answer confidence reaches $0.63 \times \exp(0.27) = 0.826$ — within 0.7% of the observed 0.82 and higher than any agent's initial confidence. The debate does not correct the error; it amplifies confidence in it. Single-agent baseline is not subject to this cascade because there are no peers to create the feedback loop. The comparison between ADMF and single-agent is therefore not "debate vs. individual" but "amplification feedback loop vs. no feedback loop."
 
 **What this means for theory.** The utility function model must include the cascade term explicitly. The corrected utility at round $t > 1$ is:
 $$U_i^t = \alpha\rho I[a_i^t = \theta] + \beta \cdot \frac{n_{\bar{a}}^t}{n-1} \cdot \bar{c}_{\bar{a}}^t + \gamma c_i^t - \delta I[a_i^t \neq \bar{a}^t]$$
@@ -748,7 +750,7 @@ The term $\bar{c}_{\bar{a}}^t$ grows over rounds, making late-round capitulation
 
 **The correct explanation.** The theory missed a second mechanism: distributional anchoring. When an LLM agent's context contains other agents' confident statements, its output distribution shifts toward confidence-consistent completions regardless of strategic motivation. This is a pure context-conditioning effect — the nearby confident tokens in the context window increase the predicted probability of confident-sounding output tokens.
 
-**Honest status of η.** The anchoring coefficient η = 0.176 is a residual calibration factor defined precisely to close the gap between predicted (0.085) and observed (0.210) miscalibration. We do not claim η is independently derived. We previously cited Friese et al. (2019) as anchoring evidence; this was an error — that paper concerns ego depletion, not anchoring, and has been removed from the bibliography. The general anchoring and adjustment literature (Tversky & Kahneman, 1974; Furnham & Boo, 2011) documents that context-provided values shift estimates in forced-choice tasks; this makes η > 0 directionally plausible but provides no specific numeric support for η = 0.176. The value is externally consistent with anchoring being a real phenomenon, but the specific magnitude is estimated from this data alone and has no independent empirical support. An independent experiment to validate η — measuring confidence inflation as a function of manipulated peer confidence levels at controlled accuracy — is an explicit priority for future work.
+**Honest status of η.** The anchoring coefficient η = 0.176 is a residual calibration factor defined precisely to close the gap between predicted (0.085) and observed (0.210) miscalibration. We do not claim η is independently derived. The anchoring and adjustment literature (Tversky & Kahneman, 1974; Furnham & Boo, 2011) documents that context-provided values shift estimates in forced-choice tasks, making η > 0 directionally plausible; but neither paper provides numeric support for η = 0.176 specifically. The specific magnitude is estimated from this data alone and has no independent empirical support. An independent experiment to validate η — measuring confidence inflation as a function of manipulated peer confidence levels at controlled accuracy — is an explicit priority for future work.
 
 The corrected miscalibration model is:
 $$M_i = \underbrace{0.085}_{\text{strategic component}} + \underbrace{\eta \cdot \bar{c}_{\text{peer}} \cdot I[A_i = 1]}_{\approx 0.125 \text{ (anchoring residual)}} = 0.210$$
@@ -785,9 +787,11 @@ The mechanism fires on an event that satisfies the formal conditions but violate
 
 ### 8.1 For AI Safety
 
-EPIC provides the first formal proof that multi-agent debate systems produce systematically miscalibrated confidence signals in the direction that most endangers human oversight: overconfident when the system agrees internally, underconfident when it disagrees. This is the opposite of what a safety-motivated confidence signal should do. A well-calibrated safety signal should be maximally uncertain when agents disagree (signalling that human review is needed) and conservatively confident when agents agree (and genuinely do agree about a correct answer). The miscalibration signature inverts this: agreement inflates confidence (reducing human review rate on cases where the AI may be wrongly confident) and disagreement deflates it (reducing human review rate on cases where the AI is genuinely uncertain).
+The miscalibration signature is a safety hazard, not just a performance concern. Standard multi-agent debate produces confidence signals that are systematically wrong in the most dangerous direction: the system is overconfident when it agrees internally (where it is most likely to be collectively wrong) and underconfident when agents disagree (where human review is most warranted). This is the exact inversion of what oversight-preserving AI should produce.
 
-Fixing this requires not just better calibration techniques but a structural change to the incentive environment — which is what EPIC provides. The miscalibration signature should be treated as a safety diagnostic for any multi-agent AI system. Measure it before deployment. Report it in system documentation. Audit it periodically.
+The consequence is concrete. A system that routes decisions to human review when stated confidence falls below 0.80 will, under standard debate, systematically *fail* to route the high-risk cases where the system is confidently wrong. Our pilot data show a 21-point confidence inflation gap (stated 0.76, empirical accuracy 0.55) in exactly these cases. Any clinical, legal, or financial AI deployment that uses multi-agent confidence for routing without measuring the miscalibration signature is likely operating with a broken human-oversight filter.
+
+EPIC addresses this at two levels: at runtime (by downweighting the agents most responsible for the miscalibration, Sections 4.3–4.4) and at training time (by using the signature as a DPO label to reduce miscalibration in the base model, Section 9). The miscalibration signature should be a standard diagnostic for any multi-agent AI system before deployment, reported in system documentation and audited periodically. The test is cheap (~$27, Algorithm 2), the failure mode is dangerous, and there is now a fix.
 
 ### 8.2 For AI Deployment in Regulated Industries
 
@@ -904,7 +908,7 @@ Either result is scientifically interesting and publishable. The training contri
 
 **5. Self-designed pilot benchmark.** The 20-question pilot study (Section 6.2) uses author-curated questions known to produce sycophancy in LLMs. This is selection bias. The TruthfulQA simulation (Section 6.7) uses an independent standardized benchmark, substantially mitigating this concern. Full resolution requires running the multi-model framework on TruthfulQA, GSM8K, and MMLU-Pro with live API calls.
 
-**6. η = 0.176 is a residual, not an independent measurement.** The anchoring coefficient exactly closes the gap between predicted (Δ=0.085) and observed (Δ=0.210) miscalibration. A prior citation (Friese et al. 2019) purporting to support this value was incorrect — that paper concerns ego depletion, not anchoring — and has been removed. The value is directionally consistent with the anchoring literature (Tversky & Kahneman 1974; Furnham & Boo 2011) but has no independent empirical support for the specific magnitude. Confirmatory experiment is future work.
+**6. η = 0.176 is a residual, not an independent measurement.** The anchoring coefficient exactly closes the gap between predicted (Δ=0.085) and observed (Δ=0.210) miscalibration. The value is directionally consistent with the anchoring and adjustment literature (Tversky & Kahneman 1974; Furnham & Boo 2011) but has no independent empirical support for the specific magnitude; it is estimated from this data alone. Confirmatory experiment — measuring confidence inflation as a function of manipulated peer confidence levels at controlled accuracy — is future work.
 
 **7. Prompt confound.** The prompt ablation (Section 6.8 [SIM]) shows the mechanism accounts for 64% of improvement. Empirical confirmation with live API calls is needed; the simulation uses calibrated behavioral model, not actual model responses to different prompts.
 
@@ -912,7 +916,7 @@ Either result is scientifically interesting and publishable. The training contri
 
 **9. EPIC-FT simulation only.** Section 9 provides full implementation (`epic_ft_validation.py`). Predicted Δ=0.10 after round 1, Δ<0.05 after round 3. Actual training requires GPU access and 100k+ EPIC debate examples.
 
-**10. [RESOLVED] Convergence bound.** T*_par = 6 (tight parallel bound) replaces T*_seq = 27, consistent with observed 4–7 rounds (Section 5.4).
+**10. Convergence bound.** T*_par = 6 (tight parallel bound, Section 5.4) is consistent with observed 4–7 rounds experimentally. The conservative sequential bound T*_seq = 27 is not applicable because Algorithm 1 penalises all agents simultaneously.
 
 **11. Annotator limitation.** Pilot study (Section 6.2) uses single annotator. Retrospective κ=0.74 validates rubric quality but not all 20 scores. Three-annotator protocol is implemented (`annotator_framework.py`) for v2.
 
@@ -1009,8 +1013,8 @@ Round 2: Peer positions visible     Round 2: EPIC Judge evaluates
          │                                  = 0.423/(0.423+3) = 0.124
          ▼                                     │
 Round 3: Cascade active                        ▼
-   c̄_wrong = 0.71×e^{0.30×0.75×2}     Round 3-4: Truthful agents
-            = 0.71×1.568 = 1.11 → 0.99 upweighted; A2 now dominant
+   c̄_wrong = 0.63×e^{0.12×0.75×3}     Round 3-4: Truthful agents
+            = 0.63×1.310 = 0.826         upweighted; A2 now dominant
                                          in consensus with w=0.333
          ▼                              A1 influence: 12.4% (reduced)
 Final: L (WRONG), conf=0.92                    ▼
