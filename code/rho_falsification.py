@@ -193,10 +193,16 @@ def predict_epic_gap_at_rho(
         eta = mu0 + BETA * 0.5 + DELTA * 0.3 - alpha * rho_val * (2.0 * q_mean - 1.0)
         return float(expit(eta))
 
-    # Calibrate k so Δ(0.1) = baseline_gap
+    # Two-point calibration:
+    #   At ρ=1.0: Δ(1.0) = k·P_syc(1)·0·mech_discount + residual_gap·1 = residual_gap  ✓
+    #   At ρ=0.1: Δ(0.1) = k·P_syc(0.1)·0.9·mech_discount + residual_gap·0.1 = baseline_gap
+    #             k is the only unknown → solve directly.
     rho_calib = 0.1
-    denom = p_syc(rho_calib) * (1.0 - rho_calib) * mech_discount + residual_gap * rho_calib
-    k = baseline_gap / denom if abs(denom) > 1e-12 else 0.0
+    term1_calib = p_syc(rho_calib) * (1.0 - rho_calib) * mech_discount
+    if abs(term1_calib) > 1e-12:
+        k = (baseline_gap - residual_gap * rho_calib) / term1_calib
+    else:
+        k = 0.0
 
     gap = k * p_syc(rho) * (1.0 - rho) * mech_discount + residual_gap * rho
     return float(gap)
