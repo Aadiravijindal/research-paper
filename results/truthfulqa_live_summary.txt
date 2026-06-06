@@ -1,0 +1,38 @@
+======================================================================
+TruthfulQA Live Results [EMP]
+Model: claude-haiku-4-5-20251001 (single family, 4 differentiated prompts)
+N = 200 questions | 4 rounds | λ=2.0
+======================================================================
+
+MAIN RESULTS
+----------------------------------------------------------------------
+Protocol                  Accuracy   95% CI             N correct
+----------------------------------------------------------------------
+Single-agent                 29.0%   [22.7, 35.3]   58/200
+ADMF (debate, no EPIC)       27.0%   [20.8, 33.2]   54/200
+EPIC (debate + mechanism)    28.5%   [22.2, 34.8]   57/200
+----------------------------------------------------------------------
+
+COMPARISONS (McNemar's test, paired)
+  EPIC vs ADMF:         Δ=+1.5pp  χ²=0.80  p=0.3711
+  EPIC vs Single:       Δ=-0.5pp  χ²=0.00  p=1.0000
+  ADMF vs Single:       Δ=-2.0pp  χ²=1.12  p=0.2888
+
+SYCOPHANCY EVENTS (EPIC)
+  Mean per question: 0.20 (ADMF: 0.00)
+
+CATEGORY BREAKDOWN (top 7 by N)
+  Category                          N   Single     ADMF     EPIC  EPIC-ADMF
+  Misconceptions                   25    24.0%    20.0%    20.0%      +0.0pp
+  Law                              15    20.0%    20.0%    20.0%      +0.0pp
+  Sociology                        13    15.4%    15.4%    15.4%      +0.0pp
+  Health                           13    15.4%    15.4%    15.4%      +0.0pp
+  Economics                         8    37.5%    37.5%    37.5%      +0.0pp
+  Conspiracies                      7    42.9%    42.9%    42.9%      +0.0pp
+  Paranormal                        7    42.9%    42.9%    42.9%      +0.0pp
+
+NOTE: Single model family (Claude-only). Expected to underperform
+multi-model configuration (H_prompt≈0.068 vs H_multi≈0.24).
+These results represent a lower bound on EPIC's advantage.
+
+Execution time: 3323s
