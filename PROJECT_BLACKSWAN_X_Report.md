@@ -7,9 +7,11 @@
 
 ---
 
+> **⚠️ ROUND-2 UPDATE (July 10, 2026):** A second, deeper competitor-and-demand verification pass (see "Round 2 Deep-Dive Verification" section at the end) **downgraded Opportunity 2 to REJECTED** — ThinkLabs AI (NVIDIA-backed, $28M, 10+ utilities), Enverus/Pearl Street (acquired March 2026), and Alphabet's Tapestry (multi-year PJM partnership) constitute more than two meaningful commercial competitors on substantially the same problem. **Opportunity 1 survived Round 2 with strengthened buyer-demand evidence.** One opportunity stands.
+
 ## Executive Summary
 
-After sweeping 2026 publications (arXiv, NSDI '26, OSDI '26, USENIX Security '26, ICLR 2026, POPL/Dafny 2026) and running exhaustive competitor verification on every candidate, **exactly two opportunities survived all eight stages.** Eleven others were rejected — most at Step 3 (competitor saturation) or Step 7 (red team / bundling risk). The rejection log is included in full, because the rejections are themselves market intelligence: they show where 2026 research is already being commercialized faster than most observers realize.
+After sweeping 2026 publications (arXiv, NSDI '26, OSDI '26, USENIX Security '26, ICLR 2026, POPL/Dafny 2026) and running exhaustive competitor verification on every candidate, **exactly two opportunities survived all eight stages** in Round 1. Eleven others were rejected — most at Step 3 (competitor saturation) or Step 7 (red team / bundling risk). The rejection log is included in full, because the rejections are themselves market intelligence: they show where 2026 research is already being commercialized faster than most observers realize.
 
 **Survivors:**
 
@@ -21,6 +23,7 @@ Both are infrastructure plays with regulatory or physical-scarcity tailwinds, ve
 ---
 
 # OPPORTUNITY 1 — Compute Integrity Assurance for AI Fleets
+> **Round-2 status: SURVIVED (confidence unchanged at MEDIUM-HIGH; buy-side evidence strengthened — see Round 2 section)**
 
 ### The one-line thesis
 Every large GPU fleet on Earth silently corrupts computation, the operators know it, the biggest ones spend tens of millions of dollars a year on in-house detection — and **no vendor-neutral commercial product exists.**
@@ -99,6 +102,7 @@ Land via neoclouds (they compete on reliability and lack in-house teams — Crus
 ---
 
 # OPPORTUNITY 2 — Certified-ML Grid Stability Screening ("EMT at software speed")
+> **Round-2 status: REJECTED (Step 3 failure on iteration).** Deeper verification found three funded players attacking substantially the same problem: ThinkLabs AI, Enverus/Pearl Street, and Alphabet's Tapestry. The Round-1 analysis below is preserved as the discovery record; the reversal is documented in the Round 2 section. Original score 74/100 → revised **42/100**.
 
 ### The one-line thesis
 Regulators now *require* the slowest simulation in power engineering (electromagnetic transient analysis) for every inverter-based resource on a grid whose queue already holds 2,000+ GW — and 2026 research just made that simulation ~orders-of-magnitude cheaper with *provable* fidelity bounds, before any pure-play vendor has commercialized it.
@@ -206,6 +210,48 @@ Every candidate below originated from genuine 2026 research and failed a specifi
 2. **Competitor searches were run to *disprove* each survivor,** and did disprove eleven of thirteen candidates. For the two survivors, the strongest known adjacent competitor is named rather than hidden (Clockwork; Pearl Street), and confidence is capped at MEDIUM-HIGH and MEDIUM respectively — not "no competitors," which is unknowable given stealth activity.
 3. **What would change the verdicts:** (Opp. 1) an NVIDIA announcement folding SDC attestation into NVSentinel, or a funded startup emerging from the LLM-PRISM author network → downgrade to reject. (Opp. 2) Pearl Street announcing EMT/dynamics capability or an incumbent (MHI/EMTP) shipping certified surrogates → downgrade to conditional.
 4. **No opportunity was added to pad the list.** The instruction was commercial inevitability over interesting research; most interesting 2026 research (agents, memory, verification, inference) is already commercially contested, which is itself the report's strongest empirical finding: **the research-to-startup gap in AI has compressed to under 12 months, so the surviving white spaces are precisely where domain trust barriers (silicon telemetry, NERC compliance) slow the generalist capital down.**
+
+---
+
+# ROUND 2 DEEP-DIVE VERIFICATION (July 10, 2026)
+
+Per Step 8 (iteration), both survivors were re-attacked with a second competitor sweep (stealth startups, YC batches, big-tech moonshots, services firms) and a dedicated buyer-demand investigation (do customers *buy* this, or only build it / ignore it?).
+
+## Opportunity 2 — REVERSED TO REJECT
+
+The Round-1 competition assessment was explicitly marked MEDIUM confidence with Pearl Street named as the racing risk. Round 2 found the race is further along than Round-1 evidence showed:
+
+1. **ThinkLabs AI** — GE Vernova spinout, **$28M Series A (April 2026) led by Energy Impact Partners with NVIDIA's NVentures and Edison International** — sells physics-informed AI grid simulation that "compresses a month-long grid study into under three minutes" at >99.7% power-flow accuracy, already **working with 10+ utilities and doubled accounts in Q1 2026** ([VentureBeat](https://venturebeat.com/infrastructure/nvidia-backed-thinklabs-ai-raises-usd28-million-to-tackle-a-growing-power), [Latitude](https://www.latitudemedia.com/news/ge-spinout-thinklabs-has-a-new-copilot-offering-for-the-grid)). Today it is power-flow/distribution-focused, not EMT — but it owns the exact positioning ("AI grid studies, minutes not months"), the utility relationships, and NVIDIA backing.
+2. **Enverus acquired Pearl Street Technologies (March 2026)** ([Enverus](https://www.enverus.com/newsroom/undo-the-queue-enverus-acquires-pearl-street-technologies-to-solve-for-a-more-reliable-resilient-grid/)) — the steady-state interconnection automation leader (300+ GW processed, up to 200× analysis speedup) now has a major energy-data company's capital and salesforce behind it.
+3. **Tapestry (Alphabet/Google X) + PJM** — a **multi-year partnership** to build a unified AI model of PJM's grid and automate interconnection study workflows for the largest US grid operator ([Utility Dive](https://www.utilitydive.com/news/pjm-google-tapestry-grid-interconnection-ai/744982/)). The Round-1 red-team claim that "Google has no grid-engineering trust or distribution" is factually dead.
+4. Also present: Splight ($12.4M, grid capacity/congestion ML, expanding to the US).
+
+**Verdict:** The narrow certified-EMT-surrogate niche is still technically unoccupied, but the rule is "substantially the same problem," and the buyer experiences the problem as "grid studies are too slow and expensive" — which now has three funded, distribution-armed attackers one step from the EMT layer. **More than two meaningful competitors → REJECT.** Score revised 74 → **42/100**.
+
+**Silver lining (recorded, not recommended):** buyer demand is now *proven* rather than inferred — PJM signed a multi-year AI-studies deal, 10+ utilities bought ThinkLabs, MISO paid for automation, Enverus paid M&A money for Pearl Street. The market is real; the white space is not. Only a team with unique EMT assets (e.g., validated vendor-model surrogate libraries) should enter, as an acquisition target.
+
+## Opportunity 1 — SURVIVED, with strengthened demand evidence
+
+**Do businesses really want to BUY this? Round-2 evidence says yes:**
+
+1. **Neoclouds follow a buy-not-build software strategy.** Industry profiling shows GPU clouds assemble their stacks from third-party software and ISV partnerships (Lambda's stack is explicitly third-party-based; buyer guides tell CTOs to select providers by their ISV ecosystem) ([ABI Research](https://www.abiresearch.com/blog/leading-neocloud-companies)). These are exactly the operators who cannot build Meta's Fleetscanner.
+2. **Reliability is now a rated, revenue-driving attribute.** SemiAnalysis **ClusterMAX** rates **84 GPU clouds** on criteria including *reliability, monitoring, and NCCL testing*, based on 140+ end-user interviews; CoreWeave runs marketing pages on its Platinum rating, and consultancies (e.g., aarna.ml) already sell "achieve Platinum" services ([ClusterMAX](https://www.clustermax.ai/criteria), [CoreWeave](https://www.coreweave.com/semianalysis)). A rating regime that moves purchase decisions is a direct willingness-to-pay signal for tooling that improves the rating.
+3. **Operators already burn real money on validation.** The industry-standard playbook calls for **3–4 week cluster burn-ins** plus 2–3 day re-tests after transport (weeks of unmonetized GPU time = millions of dollars per cluster); Crusoe and Together market their burn-in/acceptance regimes as differentiators, Together *automatically runs acceptance tests on every node* and publishes its methodology, and Fluidstack sells burn-in/acceptance as a service ([SemiAnalysis playbook](https://newsletter.semianalysis.com/p/ai-neocloud-playbook-and-anatomy), [Together](https://www.together.ai/blog/a-practitioners-guide-to-testing-and-running-large-gpu-clusters-for-training-generative-ai-models), [Crusoe](https://www.crusoe.ai/resources/blog/how-crusoe-burn-in-tests-every-node-before-it-reaches-you)).
+4. **Unreliability has a quantified price.** Leading practice is a reserve fund of **~4% of annual revenue for SLA credits**; single-node failures idle whole training clusters, and most neoclouds exclude GPU-specific failure modes from published SLAs precisely because they can't control them yet ([Lyceum SLA comparison](https://lyceum.technology/magazine/gpu-cloud-sla-uptime-comparison-2026/)).
+
+**Caveat found (stated honestly):** current spend is on burn-in and *fail-stop* reliability. Dedicated SDC-specific budgets exist today mainly at hyperscalers; selling mid-tier operators an integrity layer requires converting rating pressure + SLA exposure into a line item — an education-led sale in year one. The wedge: burn-in catches infant mortality, but the 2026 research shows SDC emerges *in-life* and worsens with FP8 — recurring screening is the subscription argument.
+
+**New adjacent competitors surfaced in Round 2 (still no direct one):**
+- **Chamber (YC)** — agentic GPU-infrastructure autopilot including unhealthy-node detection. Broad AIOps, not integrity attestation.
+- **ComputeCred** — cryptographic "proof of computation" (TEE + ZK) for *decentralized* GPU networks. Closest conceptual neighbor, but sells to crypto-adjacent distributed-compute networks, not enterprise fleets; its existence validates the attestation concept.
+- **NVIDIA Attestation (NRAS)** — attests hardware/firmware *authenticity* (security), not computational *correctness*. Reinforces both the bundling risk and the differentiation line: NVIDIA proves the GPU is genuine; nobody proves its arithmetic is right.
+- Fluidstack burn-in services, Together's open-sourced methodology — services/OSS, not a product.
+
+**Round-2 verdict: SURVIVES.** Direct dedicated competitors found: **zero**. Meaningful adjacents: Clockwork, Chamber, ComputeCred — none owning the enterprise integrity/attestation lane. Competition confidence: **MEDIUM-HIGH** (unchanged; stealth risk persists, adjacency ring is thickening — the window is likely 12–18 months, not five years). **Score confirmed: 71/100**, with the go-to-market risk (education-led sale) now explicitly priced in.
+
+## Round-2 conclusion
+
+**One opportunity survives everything: Compute Integrity Assurance for AI Fleets.** The grid opportunity died the way most candidates died — not because the pain wasn't real (it is, and buyers are paying), but because 2026 capital has already occupied the lane. That asymmetry is the report's core finding, restated: in AI infrastructure, the surviving white space is where the required asset is *proprietary fleet telemetry and trust*, which capital cannot shortcut.
 
 ---
 
